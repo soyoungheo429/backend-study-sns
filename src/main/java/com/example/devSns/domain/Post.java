@@ -1,5 +1,6 @@
 package com.example.devSns.domain;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -16,13 +17,16 @@ public class Post {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private String author;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JsonIgnoreProperties({"posts", "comments"})
+    private Member member;
 
     @Column(columnDefinition = "TEXT", nullable = false)
     private String content;
 
     @Column(nullable = false)
-    private int likes;
+    @Builder.Default
+    private int likes = 0;
 
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
@@ -40,21 +44,23 @@ public class Post {
         this.updatedAt = LocalDateTime.now();
     }
 
-    // 정적 팩토리 메서드 (Setter 대체)
-    public static Post create(String author, String content) {
+    public static Post create(Member member, String content) {
         return Post.builder()
-                .author(author)
+                .member(member)
                 .content(content)
                 .likes(0)
                 .build();
     }
 
-    // 도메인 메서드 (값 변경은 이렇게만 허용)
     public void updateContent(String content) {
         this.content = content;
     }
 
     public void increaseLikes() {
         this.likes++;
+    }
+
+    public String getAuthorName() {
+        return member != null ? member.getName() : null;
     }
 }

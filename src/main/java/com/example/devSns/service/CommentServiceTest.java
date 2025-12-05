@@ -1,17 +1,26 @@
 package com.example.devSns.service;
 
 import com.example.devSns.domain.Comment;
+import com.example.devSns.domain.Member;
 import com.example.devSns.domain.Post;
 import com.example.devSns.dto.CommentCreateRequest;
 import com.example.devSns.repository.CommentRepository;
+import com.example.devSns.repository.MemberRepository;
 import com.example.devSns.repository.PostRepository;
-import org.junit.jupiter.api.*;
-import org.mockito.*;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 
-import static org.mockito.Mockito.*;
+import java.util.Optional;
+
 import static org.assertj.core.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.*;
 
-@SpringBootTest
+@ExtendWith(MockitoExtension.class)
 class CommentServiceTest {
 
     @Mock
@@ -20,6 +29,9 @@ class CommentServiceTest {
     @Mock
     private PostRepository postRepository;
 
+    @Mock
+    private MemberRepository memberRepository;
+
     @InjectMocks
     private CommentService commentService;
 
@@ -27,25 +39,34 @@ class CommentServiceTest {
     @DisplayName("댓글 생성 테스트")
     void createComment() {
         // given
-        Post post = new Post();
-        post.setId(1L);
-        post.setAuthor("허소영");
-        post.setContent("테스트 게시글");
+        Member member = Member.create("허소영");
+        Post post = Post.builder()
+                .id(1L)
+                .member(member)
+                .content("테스트 게시글")
+                .likes(0)
+                .build();
 
-        CommentCreateRequest request = new CommentCreateRequest();
-        request.setAuthor("댓글러");
-        request.setContent("좋은 글이네요!");
+        CommentCreateRequest request = new CommentCreateRequest("댓글러", "좋은 글이네요!");
 
-        Comment comment = Comment.create("댓글러", "좋은 글이네요!", post);
+        Member commenter = Member.create("댓글러");
 
-        when(postRepository.findById(1L)).thenReturn(java.util.Optional.of(post));  // mock
-        when(commentRepository.save(any(Comment.class))).thenReturn(comment);  // mock
+        Comment comment = Comment.builder()
+                .id(10L)
+                .member(commenter)
+                .content("좋은 글이네요!")
+                .post(post)
+                .build();
+
+        when(postRepository.findById(1L)).thenReturn(Optional.of(post));
+        when(memberRepository.findByName("댓글러")).thenReturn(Optional.of(commenter));
+        when(commentRepository.save(any(Comment.class))).thenReturn(comment);
 
         // when
         Comment savedComment = commentService.create(post.getId(), request);
 
         // then
-        assertThat(savedComment.getAuthor()).isEqualTo("댓글러");
+        assertThat(savedComment.getMember().getName()).isEqualTo("댓글러");
         assertThat(savedComment.getContent()).isEqualTo("좋은 글이네요!");
         assertThat(savedComment.getPost().getId()).isEqualTo(1L);
         verify(postRepository, times(1)).findById(1L);
@@ -56,11 +77,9 @@ class CommentServiceTest {
     @DisplayName("존재하지 않는 게시글에 댓글 생성 시 예외 발생")
     void createCommentWhenPostNotFound() {
         // given
-        CommentCreateRequest request = new CommentCreateRequest();
-        request.setAuthor("댓글러");
-        request.setContent("내용");
+        CommentCreateRequest request = new CommentCreateRequest("댓글러", "내용");
 
-        when(postRepository.findById(999L)).thenReturn(java.util.Optional.empty());  // mock
+        when(postRepository.findById(999L)).thenReturn(Optional.empty());
 
         // when & then
         assertThatThrownBy(() -> commentService.create(999L, request))
@@ -68,4 +87,3 @@ class CommentServiceTest {
                 .hasMessageContaining("게시글을 찾을 수 없습니다.");
     }
 }
-
