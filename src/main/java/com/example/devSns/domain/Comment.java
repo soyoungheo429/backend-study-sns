@@ -17,18 +17,18 @@ public class Comment {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    // 댓글 작성자
-    private String author;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JsonIgnoreProperties({"posts", "comments"})
+    private Member member;
 
-    // 댓글 내용
     @Column(columnDefinition = "TEXT", nullable = false)
     private String content;
 
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
-    // Post와 연관관계 매핑
     @ManyToOne(fetch = FetchType.LAZY)
+    @JsonIgnoreProperties({"member", "comments"})
     private Post post;
 
     @PrePersist
@@ -43,13 +43,11 @@ public class Comment {
         this.updatedAt = LocalDateTime.now();
     }
 
-    // 정적 팩토리 메서드
-    public static Comment create(String author, String content, Post post) {
+    public static Comment create(Member member, String content, Post post) {
         return Comment.builder()
-                .author(author)
+                .member(member)
                 .content(content)
                 .post(post)
                 .build();
     }
 }
-
