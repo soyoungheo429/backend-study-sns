@@ -1,18 +1,18 @@
 package com.example.devSns.dto;
 
 import jakarta.validation.constraints.NotBlank;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 @Getter
-@NoArgsConstructor
+@NoArgsConstructor(access = lombok.AccessLevel.PROTECTED)
+@AllArgsConstructor
 public class CommentCreateRequest {
 
-    @NotBlank(message = "작성자명은 필수입니다.") // validation
+    @NotBlank(message = "작성자명은 필수입니다.")
     private String author;
 
     @NotBlank(message = "댓글 내용은 비어 있을 수 없습니다.")
     private String content;
 }
-
-
